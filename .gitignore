@@ -1,0 +1,8 @@
+# Operating system garbage
+.DS_Store
+
+# Sublime Text 2/3
+*.sublime-workspace
+
+# Gem stuffs
+*.gem
