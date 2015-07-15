@@ -16,8 +16,8 @@ module Pidgin
           @objects[object.name] ||= []
           @objects[object.name] << object_inst
         elsif (objects.any? { |object| object.name == name })
-          object = collection.object
-          object_inst = (objects.select{ |object| object.name == name }).first
+          object = (objects.select { |object| object.name == name }).first
+          object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
           raise "Tried to redefine `#{object.name}'!" if @objects.include? object.name
           @objects[object.name] = object_inst
         else

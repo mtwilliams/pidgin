@@ -3,7 +3,9 @@ module Pidgin
     module DomainSpecificLanguage
       module ClassMethods
         def eval(inlined_props={}, &block)
+          inlined_props ||= {}
           object_klass = Kernel.const_get(self.name.split('::')[0..-2].join('::'))
+          puts "Pidgin::Object::DomainSpecificLanguage.eval for #{object_klass}"
 
           # Handle inlined properties, adjusting |inlined_props| as we go along.
           instances_of_props = {}
@@ -62,30 +64,58 @@ module Pidgin
             def initialize(klass, properties)
               @klass = klass
               @properties = properties
+              @sub_objects = {}
             end
 
             def build
-              object = @klass.new
-              @properties.each { |name, property| object.instance_variable_set("@#{name}".to_sym, property) }
-              object.freeze
+              object_inst = @klass.new
+              @sub_objects.each { |name, sub_object_inst|
+                if sub_object_inst.is_a? Array
+                  # TODO(mtwilliams): Handle inflections better... by using collection's name?
+                  object_inst.instance_variable_set("@#{name}s".to_sym, sub_object_inst)
+                else
+                  object_inst.instance_variable_set("@#{name}".to_sym, sub_object_inst)
+                end
+              }
+              @properties.each { |name, property| object_inst.instance_variable_set("@#{name}".to_sym, property) }
+              object_inst.freeze
             end
           end).new(object_klass, instances_of_props))
 
-          Docile.dsl_eval(((Class.new do
+          (Class.new do
             def initialize(klass, builder)
               @klass = klass
               @builder = builder
             end
 
             def method_missing(name, *args, &block)
+              objects = @klass.class_variable_get(:@@objects)
+              collections = @klass.class_variable_get(:@@collections)
               properties = @klass.class_variable_get(:@@properties)
-              # TODO(mtwilliams): Handle sub-objects.
-              super unless properties.any? { |prop| prop.name == name }
-              property = (properties.select{ |prop| prop.name == name }).first
-              # TODO(mtwilliams): Handle sub-properties.
-              @builder.instance_variable_get(:@properties).merge!({property.name => property.type.new(args.first)})
+              if objects.any? { |object| object.name == name }
+                object = (objects.select { |object| object.name == name }).first
+                object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
+                raise "Tried to redefine `#{object.name}'!" if @builder.instance_variable_get(:@sub_objects).include? object.name
+                @builder.instance_variable_get(:@sub_objects)[object.name] = object_inst
+                object_inst
+              elsif collections.any? { |collection| collection.object.name == name }
+                collection = (collections.select { |collection| collection.object.name == name }).first
+                object = collection.object
+                object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
+                @builder.instance_variable_get(:@sub_objects)[object.name] ||= []
+                @builder.instance_variable_get(:@sub_objects)[object.name] << object_inst
+                object_inst
+              elsif properties.any? { |property| property.name == name }
+                property = (properties.select{ |prop| prop.name == name }).first
+                raise ArgumentError.new("Excepted sub-properties as a second argument!") if (args.length > 1) && !(args[1].is_a? Hash)
+                property_inst = property.type.new(args[0], args[1])
+                @builder.instance_variable_get(:@properties).merge!({property.name => property_inst})
+                property_inst
+              else
+                super
+              end
             end
-          end).new(object_klass, object_builder)), &block)
+          end).new(object_klass, object_builder).instance_eval(&block)
 
           object = object_builder.build
           return object
@@ -98,6 +128,20 @@ module Pidgin
     end
 
     module ClassMethods
+      def object(name, type)
+        object_klass = Kernel.const_get(self.name)
+        object = OpenStruct.new({:name => name, :type => type})
+        object_klass.class_variable_get(:@@objects) << object
+        object
+      end
+
+      def collection(name, type)
+        object_klass = Kernel.const_get(self.name)
+        collection = OpenStruct.new({:object => OpenStruct.new({:name => name, :type => type})})
+        object_klass.class_variable_get(:@@collections) << collection
+        collection
+      end
+
       def property(name, type, opts={})
         object_klass = Kernel.const_get(self.name)
         property = Property.new(name, type, opts)
@@ -107,6 +151,8 @@ module Pidgin
     end
 
     def self.included(klass)
+      klass.class_variable_set(:@@objects, [])
+      klass.class_variable_set(:@@collections, [])
       klass.class_variable_set(:@@properties, [])
       klass.extend(ClassMethods)
       klass.const_set(:DSL, Class.new do
