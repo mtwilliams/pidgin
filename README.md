@@ -27,6 +27,7 @@ module Ryb
     property :name, String, :inline => true
     enum :linkage, [:static, :dynamic], :default => :static
     flag :gen_debug_symbols
+    property :files, Array, :appendable => true
     # ...
   end
 end
@@ -41,7 +42,19 @@ project :name => 'vanguard' do
     linkage :dynamic
 
     configuration :name => 'debug' do
-      gen_debug_symbols
+      # ...
+    end
+
+    files ["src/yeti.cc",
+           "src/yeti/core/console.cc",
+           ...]
+
+    # ...
+
+    target :name => 'windows' do
+      files ["src/yeti/win32_window.cc",
+             "src/yeti/gfx/d3d11_*.cc",
+             ...]
     end
 
     # ...
