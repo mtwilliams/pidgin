@@ -35,6 +35,21 @@ end
 Then you use it by calling `Pidgin::DomainSpecificLanguage.eval`, in this case through `Ryb::DomainSpecificLanguage`:
 
 ```Ruby
+# Rybfile
+project :name => 'vanguard' do
+  library :name => 'yeti' do
+    linkage :dynamic
+
+    configuration :name => 'debug' do
+      gen_debug_symbols
+    end
+
+    # ...
+  end
+end
+```
+
+```Ruby
 rybfile = Ryb::DomainSpecificLanguage.eval(File.read("Rybfile"))
 ```
 
