@@ -2,7 +2,6 @@ PATH
   remote: .
   specs:
     pidgin (0.0.0.dev)
-      docile
 
 GEM
   remote: https://rubygems.org/
@@ -26,7 +25,6 @@ GEM
     cucumber-core (1.2.0)
       gherkin (~> 2.12.0)
     diff-lcs (1.2.5)
-    docile (1.1.5)
     ffi (1.9.10)
     gherkin (2.12.2)
       multi_json (~> 1.3)
