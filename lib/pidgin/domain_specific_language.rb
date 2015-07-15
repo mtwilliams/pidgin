@@ -13,8 +13,8 @@ module Pidgin
           collection = (collections.select { |collection| collection.object.name == name }).first
           object = collection.object
           object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
-          @objects[object.name] ||= []
-          @objects[object.name] << object_inst
+          @objects[collection.name] ||= []
+          @objects[collection.name] << object_inst
         elsif (objects.any? { |object| object.name == name })
           object = (objects.select { |object| object.name == name }).first
           object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
@@ -34,10 +34,10 @@ module Pidgin
         object
       end
 
-      def collection(name, type)
+      def collection(name, type, opts={})
+        plural = opts[:plural] || "#{name}s"
         dsl = Kernel.const_get(self.name)
-        # TODO(mtwilliams): Handle inflections better.
-        collection = OpenStruct.new({:object => OpenStruct.new({:name => name, :type => type})})
+        collection = OpenStruct.new({:name => plural, :object => OpenStruct.new({:name => name, :type => type})})
         dsl.class_variable_get(:@@collections) << collection
         collection
       end

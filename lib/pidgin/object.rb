@@ -69,14 +69,7 @@ module Pidgin
 
             def build
               object_inst = @klass.new
-              @sub_objects.each { |name, sub_object_inst|
-                if sub_object_inst.is_a? Array
-                  # TODO(mtwilliams): Handle inflections better... by using collection's name?
-                  object_inst.instance_variable_set("@#{name}s".to_sym, sub_object_inst)
-                else
-                  object_inst.instance_variable_set("@#{name}".to_sym, sub_object_inst)
-                end
-              }
+              @sub_objects.each { |name, sub_object_inst| object_inst.instance_variable_set("@#{name}".to_sym, sub_object_inst) }
               @properties.each { |name, property| object_inst.instance_variable_set("@#{name}".to_sym, property) }
               object_inst.freeze
             end
@@ -102,8 +95,8 @@ module Pidgin
                 collection = (collections.select { |collection| collection.object.name == name }).first
                 object = collection.object
                 object_inst = Kernel.const_get("#{object.type}::DSL").eval(args.first, &block)
-                @builder.instance_variable_get(:@sub_objects)[object.name] ||= []
-                @builder.instance_variable_get(:@sub_objects)[object.name] << object_inst
+                @builder.instance_variable_get(:@sub_objects)[collection.name] ||= []
+                @builder.instance_variable_get(:@sub_objects)[collection.name] << object_inst
                 object_inst
               elsif properties.any? { |property| property.name == name }
                 property = (properties.select{ |prop| prop.name == name }).first
@@ -135,9 +128,10 @@ module Pidgin
         object
       end
 
-      def collection(name, type)
+      def collection(name, type, opts={})
+        plural = opts[:plural] || "#{name}s"
         object_klass = Kernel.const_get(self.name)
-        collection = OpenStruct.new({:object => OpenStruct.new({:name => name, :type => type})})
+        collection = OpenStruct.new({:name => plural, :object => OpenStruct.new({:name => name, :type => type})})
         object_klass.class_variable_get(:@@collections) << collection
         collection
       end
