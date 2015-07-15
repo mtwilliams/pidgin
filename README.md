@@ -43,4 +43,5 @@ Then use your object hierarchy how you see fit:
 ```Ruby
 rybfile[:projects].each do |project|
   Ryb::XCode4.gen_project_files_for project
+end
 ```
