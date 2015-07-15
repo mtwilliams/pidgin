@@ -45,3 +45,17 @@ rybfile[:projects].each do |project|
   Ryb::XCode4.gen_project_files_for project
 end
 ```
+
+---
+
+Pidgin was written quick 'n' dirty, as a result it has some warts:
+
+  1. It doesn't handle errors well.
+  2. It doesn't validate it's assumptions.
+  3. It doesn't let you specify custom validation logic.
+  4. It doesn't generate DSLs with the best possible syntax.
+  5. It has duplicated code that is quite complex in some places.
+  6. It has no automated testing suite.
+  7. There's not documentation.
+
+I'll eventually loop-back and fix these, but that may be a while. If you want to see Pidgin become something more you'll have to contribute.
