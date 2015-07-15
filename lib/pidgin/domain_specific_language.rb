@@ -7,7 +7,6 @@ module Pidgin
       end
 
       def method_missing(name, *args, &block)
-        puts name
         objects = @dsl.class_variable_get(:@@objects)
         collections = @dsl.class_variable_get(:@@collections)
         if collections.any? { |collection| collection.object.name == name }
